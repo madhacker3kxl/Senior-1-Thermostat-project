@@ -1,19 +1,17 @@
 #include <SoftwareSerial.h>
 
 //Pin outputs
-const int Fan_Pin  = 4;
-const int AC_Pin   = 5;
-const int Heat_Pin = 6;
-const int Alert_Pin= 7;
-const int R_Temp = A0;
+const int Fan_Pin   = 4;
+const int AC_Pin    = 5;
+const int Heat_Pin  = 6;
+const int Alert_Pin = 7;
+const int R_Temp    = A0;
+const bool Print    = 1;//For debug output
 
 int numReading   = 100; //Number of readings to average
 
-//bits for various system
-const byte Off   = 0b1000;
-const byte Cool  = 0b0001;
-const byte Heat  = 0b0010;
-const byte Alert = 0b0100;
+//States of the pin
+byte Fan_State, AC_State, Heat_State, Alert_State;
 
 SoftwareSerial mySerial(2, 3);
 
@@ -23,8 +21,8 @@ void setup() {
   mySerial.begin(9600);
   analogReference(INTERNAL); // Change internal reference to 1.1v for more accuracy
   //Setup pins directions
-  pinMode(Fan_Pin, OUTPUT); 
-  pinMode(AC_Pin, OUTPUT); 
+  pinMode(Fan_Pin, OUTPUT);
+  pinMode(AC_Pin, OUTPUT);
   pinMode(Heat_Pin, OUTPUT);
   pinMode(Alert_Pin, OUTPUT);
   digitalWrite(Fan_Pin, LOW);
@@ -36,38 +34,66 @@ void setup() {
 void loop() {
   //If there's any serial available, read it:
   while (mySerial.available() > 0) {
-    if (mySerial.read() == 't')
+    char temp;
+    temp = mySerial.read();
+    if (temp == 't')
     {
-     byte lbyte, hbyte; // To hold the low and high byte of 10bit reading
-     int tvar; // Temporary variable for holding stuffs
-     for(int x = 0; x < numReading; x++) //Read the analog pin for certain amount
-     {
-      tvar += analogRead(A0);
-      delay(1);
-     }
-     R_Temp = (tvar/numReading); // average the temperature reading
-     lbyte = lowByte(R_Temp);    //get the low byte
-     hbyte = highByte(R_Temp);   // get the high byte
- 
-     mySerial.write(lbyte);      //Send the low byte
-     mySerial.write(hbyte);      //Send the high byte
- 
-     mySerial.flush();           //Clear the serial port
+      byte lbyte, hbyte; // To hold the low and high byte of 10bit reading
+      int tvar; // Temporary variable for holding stuffs
+      for (int x = 0; x < numReading; x++) //Read the analog pin for certain amount
+      {
+        tvar += analogRead(R_Temp);
+        delay(1);
+      }
+      tvar = (tvar / numReading); // average the temperature reading
+      lbyte = lowByte(tvar);    //get the low byte
+      hbyte = highByte(tvar);   // get the high byte
+
+      mySerial.write(lbyte);      //Send the low byte
+      mySerial.write(hbyte);      //Send the high byte
+
+      if (Print)
+      {
+        double Temperature = (1.1 * tvar * 100.0) / 1024;
+        Serial.print("tvar: ");  Serial.println(tvar);
+        Serial.print("lbyte: "); Serial.println(lbyte);
+        Serial.print("hbyte: "); Serial.println(hbyte);
+        Serial.print("Temperature in C: "); Serial.println(Temperature);
+      }
     }
-    else if (mySerial.read() == 's')
+
+    else if (temp == 'c')
     {
       Fan_State   = mySerial.parseInt();
       AC_State    = mySerial.parseInt();
       Heat_State  = mySerial.parseInt();
       Alert_State = mySerial.parseInt();
+
+      if (Print)
+      {
+        Serial.print("Fan_State: ");  Serial.println(Fan_State);
+        Serial.print("AC_State: "); Serial.println(AC_State);
+        Serial.print("Heat_State: "); Serial.println(Heat_State);
+        Serial.print("Alert_State: "); Serial.println(Alert_State);
+      }
     }
-    
-    if (mySerial.read() == '\n')
+
+    else if (temp == 's')
     {
-      digitalWrite(Fan, Fan_State);
-      digitalWrite(AC, AC_State);
-      digitalWrite(Heat, Heat_State);
-      digitalWrite(Alert, Alert_State);
+      digitalWrite(Fan_Pin, Fan_State);
+      digitalWrite(AC_Pin, AC_State);
+      digitalWrite(Heat_Pin, Heat_State);
+      digitalWrite(Alert_Pin, Alert_State);
+
+      if (Print)
+      {
+        Serial.print("Fan_Pin: ");  Serial.println(Fan_State);
+        Serial.print("AC_Pin: "); Serial.println(AC_State);
+        Serial.print("Heat_Pin: "); Serial.println(Heat_State);
+        Serial.print("Alert_Pin: "); Serial.println(Alert_State);
+      }
     }
+    Serial.flush();
   }
 }
+
