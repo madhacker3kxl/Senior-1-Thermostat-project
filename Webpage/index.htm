@@ -20,6 +20,10 @@
 									this.responseXML.getElementsByTagName('mode')[0].childNodes[0].nodeValue;
 						document.getElementsByClassName("sch")[0].innerHTML =
 									this.responseXML.getElementsByTagName('sch')[0].childNodes[0].nodeValue;
+						document.getElementsByClassName("status")[0].innerHTML =
+									this.responseXML.getElementsByTagName('status')[0].childNodes[0].nodeValue;
+						document.getElementsByClassName("time")[0].innerHTML =
+									this.responseXML.getElementsByTagName('time')[0].childNodes[0].nodeValue;
 						}
 					}
 				}
@@ -37,6 +41,12 @@
 			<h2>Temperature</h2>
 			<p><span class="temp">...</span></p>
 		</div>
+		
+		<div class="IO_box">
+			<h2>Current Time</h2>
+			<p><span class="time">...</span></p>
+		</div>
+		
 		<div class="IO_box">
 			<h2>Current Schedule</h2>
 			<p><span class="sch">...</span></p>
@@ -44,6 +54,11 @@
 		<div class="IO_box">
 			<h2>Current Mode</h2>
 			<p><span class="mode">...</span></p>
+		</div>
+		
+		<div class="IO_box">
+			<h2>Status</h2>
+			<p><span class="status">...</span></p>
 		</div>
     </body>
 </html>

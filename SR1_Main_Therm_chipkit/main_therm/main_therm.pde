@@ -1,21 +1,33 @@
 #include <SPI.h>
 #include <Ethernet.h>
 #include <SD.h>
-
+#include <Wire.h>
 // size of buffer used to capture HTTP requests
 #define REQ_BUF_SZ   40
 
 // MAC address from Ethernet shield sticker under board
-byte mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED };
-//IPAddress ip(192, 168, 0, 20); // IP address, may need to change depending on network
-EthernetServer server(80);  // create a server at port 80
+byte mac[] = { 
+  0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED };
+byte ip[] = { 
+  192, 168, 1, 116}; // IP address, may need to change depending on network
+byte gateway[] = { 
+  192,168, 1, 1 };
+byte subnet[] = { 
+  255, 255, 255, 0 };
+
+byte therm[] = { 
+  192, 168, 1, 115 };
+Server server(80);  // create a server at port 80
 File webFile;
-char HTTP_req[REQ_BUF_SZ] = {0}; // buffered HTTP request stored as null terminated string
+char HTTP_req[REQ_BUF_SZ] = {
+  0}; // buffered HTTP request stored as null terminated string
 char req_index = 0;              // index into HTTP_req buffer
-bool heat, cool, alert, fan;
+bool heat, cool, alert, fan=0;
 float Temp_Limit = 1.0, Morning_Temp = 78.0, Mate_Temp= 78.0, Sleep_Temp = 78.0;
 
-EthernetClient r_therm;
+Client r_therm(therm, 2000);
+
+int hour, minute;
 
 void setup()
 {
@@ -23,7 +35,7 @@ void setup()
   pinMode(10, OUTPUT);
   digitalWrite(10, HIGH);
 
-  Serial.begin(9600);       // for debugging
+  Serial.begin(115200);       // for debugging
 
   // initialize SD card
   Serial.println("Initializing SD card...");
@@ -39,24 +51,26 @@ void setup()
   }
   Serial.println("SUCCESS - Found index.htm file.");
 
-  Ethernet.begin(mac);  // initialize Ethernet device
-  
+  Ethernet.begin(mac, ip, gateway, subnet);  // initialize Ethernet device
+
   //Connect to remote unit
-  Serial.println(Ethernet.localIP());
+  //Serial.println(Ethernet.localIP());
+  Wire.begin();
   Serial.println("Connecting to remote therm");
-  byte therm[] = { 192, 168, 1, 115 };
-  if (r_therm.connect(therm, 2000)) {
+
+  if (r_therm.connect()) {
     Serial.println("connected");
   }
   else {
     Serial.println("connection failed");
   }
+
   server.begin();    // start to listen for clients
 }//(end setup)
 
 void loop()
 {
-  EthernetClient client = server.available();  // try to get client
+  Client client = server.available();  // try to get client
 
   if (client) {  // got client?
     boolean currentLineIsBlank = true;
@@ -79,7 +93,9 @@ void loop()
             client.println("Content-Type: text/xml");
             client.println("Connection: keep-alive");
             client.println();
+            get_time();
             Temperature(client);
+            send_data();
           }
           else {  // web page request
             // send rest of HTTP header
@@ -120,112 +136,128 @@ void loop()
 }
 
 // send the state of the switch to the web browser
-void Temperature(EthernetClient cl)
+void Temperature(Client cl)
 {
   float Temperature;
+
   cl.print("<?xml version = \"1.0\" ?>");
   cl.print("<inputs>");
-  
+
   // read the temperature
   r_therm.print('t');
   if (r_therm.available() > 1) {
-    //byte x = r_therm.read();
-    //byte y = r_therm.read();
-    Temperature = (1.1 * (r_therm.read() | (r_therm.read() << 8)) * 100.0) / 1024;
+    byte x = r_therm.read();
+    byte y = r_therm.read();
+    Temperature = (1.1 * (x | (y << 8)) * 100.0) / 1024;
     Temperature = Temperature * 9 / 5 + 32;
-    //Temperature = (x | (y << 8));
     cl.print("<temp>");
-    cl.print(Temperature); cl.print(" °F, ");
+    cl.print(Temperature); 
+    cl.print(" Â°F, ");
     cl.println("</temp>");
   }
-  
+
+  cl.print("<time>"); 
+  cl.print(hour); 
+  cl.print(":"); 
+  cl.print(minute);
+  cl.println("</time>");
   //Alert Status
+
   if ((Temperature > (88.0)) || (Temperature < (68.0))) {
     cl.print("<status>");
     cl.print("!!ALERT!!");
     cl.println("</status>");
   }
-  
+
   else {
     cl.print("<status>");
     cl.print("OK");
     cl.println("</status>");
   }
-  
-//  //See which mode is working
-//  if (now.hour() >= 8 && now.hour() < 14)
-//  {
-//  cl.print("<sch>");
-//  cl.print("Morning");
-//  cl.println("</sch>");
-//  if (Temperature > (Morning_Temp + Temp_Limit)) {
-//    cl.print("<mode>");
-//    cl.print("Cool");
-//    cl.println("</mode>");
-//    cool = 1; heat = 0;
-//  }
-//  else if (Temperature < (Morning_Temp - Temp_Limit)) {
-//    cl.print("<mode>");
-//    cl.print("Heat");
-//    cl.println("</mode>");
-//    heat = 1; cool = 0;
-//  }
-//  else {
-//    cl.print("<mode>");
-//    cl.print("OFF");
-//    cl.println("</mode>");
-//    heat = 0; cool = 0;
-//  }
-//}
-//    else if (now.hour() >= 14 && now.hour() < 20)
-//      {
-//		cl.print("<sch>");
-//		cl.print("Mating");
-//		cl.println("</sch>");
-//         if (Temperature > (Mate_Temp + Temp_Limit)) {
-//           cl.print("<mode>");
-//			cl.print("Cool");
-//			cl.println("</mode>");
-//			cool = 1; heat = 0;
-//         }
-//        else if (Temperature < (Mate_Temp - Temp_Limit)) {
-//           cl.print("<mode>");
-//			cl.print("Heat");
-//			cl.println("</mode>");
-//			heat = 1; cool = 0;
-//        }
-//        else{
-//           cl.print("<mode>");
-//			cl.print("OFF");
-//			cl.println("</mode>");
-//			heat = 0; cool = 0;
-//        }
-//      }
-//
-//else
-//      {
-//        cl.print("<sch>");
-//		cl.print("Sleeping");
-//		cl.println("</sch>");
-//        if (Temperature > (Sleep_Temp + Temp_Limit)) {
-//            cl.print("<mode>");
-//			cl.print("Cool");
-//			cl.println("</mode>");
-//			cool = 1; heat = 0;
-//        }
-//        else if (Temperature < (Sleep_Temp - Temp_Limit)) {
-//            cl.print("<mode>");
-//			cl.print("Heat");
-//			cl.println("</mode>");
-//			heat = 1; cool = 0;
-//        }
-//        else {
-//            cl.print("<mode>");
-//			cl.print("OFF");
-//			cl.println("</mode>");
-//			heat = 0; cool = 0;
-//        }
-//      }
+
+  //See which mode is working
+  if (hour >= 8 && hour < 14)
+  {
+    cl.print("<sch>");
+    cl.print("Morning");
+    cl.println("</sch>");
+    if (Temperature > (Morning_Temp + Temp_Limit)) {
+      cl.print("<mode>");
+      cl.print("Cool");
+      cl.println("</mode>");
+      cool = 1; 
+      heat = 0;
+    }
+    else if (Temperature < (Morning_Temp - Temp_Limit)) {
+      cl.print("<mode>");
+      cl.print("Heat");
+      cl.println("</mode>");
+      heat = 1; 
+      cool = 0;
+    }
+    else {
+      cl.print("<mode>");
+      cl.print("OFF");
+      cl.println("</mode>");
+      heat = 0; 
+      cool = 0;
+    }
+  }
+  else if (hour >= 14 && hour < 20)
+  {
+    cl.print("<sch>");
+    cl.print("Mating");
+    cl.println("</sch>");
+    if (Temperature > (Mate_Temp + Temp_Limit)) {
+      cl.print("<mode>");
+      cl.print("Cool");
+      cl.println("</mode>");
+      cool = 1; 
+      heat = 0;
+    }
+    else if (Temperature < (Mate_Temp - Temp_Limit)) {
+      cl.print("<mode>");
+      cl.print("Heat");
+      cl.println("</mode>");
+      heat = 1; 
+      cool = 0;
+    }
+    else{
+      cl.print("<mode>");
+      cl.print("OFF");
+      cl.println("</mode>");
+      heat = 0; 
+      cool = 0;
+    }
+  }
+
+  else
+  {
+    cl.print("<sch>");
+    cl.print("Sleeping");
+    cl.println("</sch>");
+    if (Temperature > (Sleep_Temp + Temp_Limit)) {
+      cl.print("<mode>");
+      cl.print("Cool");
+      cl.println("</mode>");
+      cool = 1; 
+      heat = 0;
+    }
+    else if (Temperature < (Sleep_Temp - Temp_Limit)) {
+      cl.print("<mode>");
+      cl.print("Heat");
+      cl.println("</mode>");
+      heat = 1; 
+      cool = 0;
+    }
+    else {
+      cl.print("<mode>");
+      cl.print("OFF");
+      cl.println("</mode>");
+      heat = 0; 
+      cool = 0;
+    }
+  }
   cl.print("</inputs>");
 }
 
@@ -264,3 +296,45 @@ char StrContains(char *str, char *sfind) {
 
   return 0;
 }
+
+void send_data() {
+  r_therm.print('c');
+  r_therm.print('fan');
+  r_therm.print(',');
+  r_therm.print('cool');
+  r_therm.print(',');
+  r_therm.print('heat');
+  r_therm.print(',');
+  r_therm.print('alert');
+  delay(100);
+  r_therm.print('s');  
+}
+
+void get_time() {
+  // send request to receive data starting at register 0
+  Wire.beginTransmission(0x68); // 0x68 is DS3231 device address
+  Wire.write((byte)0); // start at register 0
+  Wire.endTransmission();
+  Wire.requestFrom(0x68, 3); // request three bytes (seconds, minutes, hours)
+
+  while(Wire.available())
+  { 
+    int seconds = Wire.receive(); // get seconds
+    int minutes = Wire.receive(); // get minutes
+    int hours = Wire.receive();   // get hours
+
+    seconds = (((seconds & 0b11110000)>>4)*10 + (seconds & 0b00001111)); // convert BCD to decimal
+    minutes = (((minutes & 0b11110000)>>4)*10 + (minutes & 0b00001111)); // convert BCD to decimal
+    hours = (((hours & 0b00100000)>>5)*20 + ((hours & 0b00010000)>>4)*10 + (hours & 0b00001111)); // convert BCD to decimal (assume 24 hour mode)
+    hour=hours;
+    minute=minutes;
+    Serial.print(hours); 
+    Serial.print(":"); 
+    Serial.print(minutes); 
+    Serial.print(":"); 
+    Serial.println(seconds);
+  }
+}
+
+
+
