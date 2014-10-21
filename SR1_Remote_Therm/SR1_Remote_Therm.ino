@@ -11,7 +11,7 @@ const bool Print    = 1;//For debug output
 int numReading   = 100; //Number of readings to average
 
 //States of the pin
-byte Fan_State, AC_State, Heat_State, Alert_State;
+bool Fan_State, AC_State, Heat_State, Alert_State;
 
 SoftwareSerial mySerial(2, 3);
 

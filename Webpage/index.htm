@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Power-X Inc.</title>
+		
+		<script>
+		function Temperature()
+		{
+			nocache = "&nocache=" + Math.random() * 1000000;
+			var request = new XMLHttpRequest();
+			request.onreadystatechange = function()
+			{
+				if (this.readyState == 4) {
+					if (this.status == 200) {
+						if (this.responseText != null) {
+						document.getElementsByClassName("temp")[0].innerHTML =
+									this.responseXML.getElementsByTagName('temp')[0].childNodes[0].nodeValue;
+						//AC and Heat Mode
+						document.getElementsByClassName("mode")[0].innerHTML =
+									this.responseXML.getElementsByTagName('mode')[0].childNodes[0].nodeValue;
+						document.getElementsByClassName("sch")[0].innerHTML =
+									this.responseXML.getElementsByTagName('sch')[0].childNodes[0].nodeValue;
+						}
+					}
+				}
+			}
+		request.open("GET", "input" + nocache, true);
+		request.send(null);
+		setTimeout('Temperature()', 2000);
+		}
+		</script>
+		
+	</head>
+
+	<body onload="Temperature()">
+        <div class="IO_box">
+			<h2>Temperature</h2>
+			<p><span class="temp">...</span></p>
+		</div>
+		<div class="IO_box">
+			<h2>Current Schedule</h2>
+			<p><span class="sch">...</span></p>
+		</div>
+		<div class="IO_box">
+			<h2>Current Mode</h2>
+			<p><span class="mode">...</span></p>
+		</div>
+    </body>
+</html>
