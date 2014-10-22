@@ -6,6 +6,7 @@ const int AC_Pin    = 5;
 const int Heat_Pin  = 6;
 const int Alert_Pin = 7;
 const int R_Temp    = A0;
+const int L_Temp    = A1;
 const bool Print    = 1;//For debug output
 
 int numReading   = 100; //Number of readings to average
@@ -39,13 +40,17 @@ void loop() {
     if (temp == 't')
     {
       byte lbyte, hbyte; // To hold the low and high byte of 10bit reading
-      int tvar; // Temporary variable for holding stuffs
+      int rvar, lvar, tvar; // Temporary variable for holding stuffs
       for (int x = 0; x < numReading; x++) //Read the analog pin for certain amount
       {
-        tvar += analogRead(R_Temp);
+        lvar += analogRead(L_Temp);
+        delay(1);
+        rvar += analogRead(R_Temp);
         delay(1);
       }
-      tvar = (tvar / numReading); // average the temperature reading
+      rvar = (rvar / numReading); // average right temperature reading
+      lvar = (lvar / numReading); // average left temperature reading
+      tvar = ((lvar + rvar)/2);  // add the two readings to get more better values
       lbyte = lowByte(tvar);    //get the low byte
       hbyte = highByte(tvar);   // get the high byte
 

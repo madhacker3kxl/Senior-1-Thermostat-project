@@ -258,6 +258,7 @@ void Temperature(Client cl)
       cool = 0;
     }
   }
+  r_therm.flush();
   cl.print("</inputs>");
 }
 
