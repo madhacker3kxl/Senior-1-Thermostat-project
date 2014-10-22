@@ -9,14 +9,14 @@
 byte mac[] = { 
   0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED };
 byte ip[] = { 
-  192, 168, 1, 116}; // IP address, may need to change depending on network
+  192, 168, 2, 210}; // IP address, may need to change depending on network
 byte gateway[] = { 
-  192,168, 1, 1 };
+  192,168, 2, 1 };
 byte subnet[] = { 
   255, 255, 255, 0 };
 
 byte therm[] = { 
-  192, 168, 1, 115 };
+  192, 168, 2, 201 };
 Server server(80);  // create a server at port 80
 File webFile;
 char HTTP_req[REQ_BUF_SZ] = {
@@ -94,6 +94,7 @@ void loop()
             client.println("Connection: keep-alive");
             client.println();
             get_time();
+            change_setpoint();
             Temperature(client);
             send_data();
           }
@@ -152,7 +153,7 @@ void Temperature(Client cl)
     Temperature = Temperature * 9 / 5 + 32;
     cl.print("<temp>");
     cl.print(Temperature); 
-    cl.print(" Ã‚Â°F, ");
+    cl.print(" °F, ");
     cl.println("</temp>");
   }
 
@@ -161,6 +162,7 @@ void Temperature(Client cl)
   cl.print(":"); 
   cl.print(minute);
   cl.println("</time>");
+  
   //Alert Status
 
   if ((Temperature > (88.0)) || (Temperature < (68.0))) {
@@ -258,8 +260,48 @@ void Temperature(Client cl)
       cool = 0;
     }
   }
+  
+  Setpoints(cl);
   r_therm.flush();
   cl.print("</inputs>");
+}
+
+void Setpoints(Client cl){
+  //get the morning setpoint temperature
+  cl.print("<m_temp>"); 
+  cl.print(Morning_Temp); 
+  cl.println("</m_temp>");
+  
+  //get the mating setpoint temperature
+  cl.print("<mm_temp>"); 
+  cl.print(Mate_Temp); 
+  cl.println("</mm_temp>");
+  
+  //get the sleeping temperature
+  cl.print("<s_temp>"); 
+  cl.print(Sleep_Temp); 
+  cl.println("</s_temp>");
+}
+
+void change_setpoint(void) {
+    if (StrContains(HTTP_req, "mi")) {
+        Morning_Temp += 0.1;
+    }
+    else if (StrContains(HTTP_req, "md")) {
+        Morning_Temp -= 0.1;
+    }
+    else if (StrContains(HTTP_req, "mmi")) {
+        Mate_Temp += 0.1;
+    }
+    else if (StrContains(HTTP_req, "mmd")) {
+        Mate_Temp -= 0.1;
+    }
+    else if (StrContains(HTTP_req, "si")) {
+        Sleep_Temp += 0.1;
+    }
+    else if (StrContains(HTTP_req, "sd")) {
+        Sleep_Temp -= 0.1;
+    }
 }
 
 // sets every element of str to 0 (clears array)
@@ -329,11 +371,6 @@ void get_time() {
     hours = (((hours & 0b00100000)>>5)*20 + ((hours & 0b00010000)>>4)*10 + (hours & 0b00001111)); // convert BCD to decimal (assume 24 hour mode)
     hour=hours;
     minute=minutes;
-    Serial.print(hours); 
-    Serial.print(":"); 
-    Serial.print(minutes); 
-    Serial.print(":"); 
-    Serial.println(seconds);
   }
 }
 

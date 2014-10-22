@@ -2,6 +2,7 @@
 <html><head><title>Power-X Inc.</title>
 
 <script>
+m = "";
 function Temperature()
 {
 nocache = "&nocache=" + Math.random() * 1000000;
@@ -22,19 +23,44 @@ document.getElementsByClassName("status")[0].innerHTML =
 this.responseXML.getElementsByTagName('status')[0].childNodes[0].nodeValue;
 document.getElementsByClassName("time")[0].innerHTML =
 this.responseXML.getElementsByTagName('time')[0].childNodes[0].nodeValue;
+document.getElementsByClassName("m_temp")[0].innerHTML =
+this.responseXML.getElementsByTagName('m_temp')[0].childNodes[0].nodeValue;
+document.getElementsByClassName("mm_temp")[0].innerHTML =
+this.responseXML.getElementsByTagName('mm_temp')[0].childNodes[0].nodeValue;
+document.getElementsByClassName("s_temp")[0].innerHTML =
+this.responseXML.getElementsByTagName('s_temp')[0].childNodes[0].nodeValue;
 }
 }
 }
 }
-request.open("GET", "input" + nocache, true);
+request.open("GET", "input" + m + nocache, true);
 request.send(null);
 setTimeout('Temperature()', 2000);
+m = "";
+}
+function m_up() {
+m = "&mi";
+}
+function m_down() {
+m = "&md";
+}
+function mm_up() {
+m = "&mmi";
+}
+function mm_down() {
+m = "&mmd";
+}
+function s_up() {
+m = "&si";
+}
+function s_down() {
+m = "&sd";
 }
 </script>
 </head>
 <body onload="Temperature()" style="margin-left: auto; margin-right: auto; text-align: center;">
 <div style="text-align: center;">
-<h1>PO<span style="font-style: italic;">W</span>ER-<span style="color: rgb(255, 153, 0);">X</span><br>
+<h1>PO<span style="font-style: italic;">W</span>ER-<span style="color: rgb(255, 153, 0);">X</span> <small><small>inc</small></small><br>
 Thermostat System Monitor</h1>
 </div>
 <div style="text-align: center;">
@@ -42,7 +68,7 @@ Thermostat System Monitor</h1>
 <p><span class="time">Not Ready</span></p>
 </div>
 <div>
-<table style="background-color: rgb(229, 229, 229); width: 750px; text-align: left; margin-left: auto; margin-right: auto;" border="1" cellpadding="2" cellspacing="2">
+<table style="background-color: rgb(229, 229, 229); width: 700px; text-align: left; margin-left: auto; margin-right: auto;" border="1" cellpadding="2" cellspacing="2">
 <tbody>
 <tr>
 <td style="height: 80px; width: 300px;">
@@ -75,5 +101,49 @@ Thermostat System Monitor</h1>
 </tbody>
 </table>
 </div>
-<div></div>
+<div>
+<br>
+<table style="background-color: silver; width: 700px; text-align: left; margin-left: auto; margin-right: auto;" border="1" cellpadding="2" cellspacing="2">
+<tbody>
+<tr>
+<td style="height: 80px; width: 108px;">
+<div style="text-align: center;">
+<h3>Morning Setpoint</h3>
+<p><span class="m_temp">Not Ready</span></p>
+</div>
+</td>
+<td style="height: 80px; width: 108px;">
+<div style="text-align: center;">
+<h3><button onclick="m_up()" name="m_inc" type="button">UP</button><br>
+<button onclick="m_down()" name="m_dec" type="button">Down</button></h3>
+</div>
+</td>
+<td style="height: 80px; width: 108px;">
+<div style="text-align: center;">
+<h3>Mating Setpoint</h3>
+<p><span class="mm_temp">Not Ready</span></p>
+</div>
+</td>
+<td style="height: 80px; width: 108px;">
+<div style="text-align: center;">
+<h3><button onclick="mm_up()" name="mm_inc" type="button">UP</button><br>
+<button onclick="mm_down()" name="mm_dec" type="button">Down</button></h3>
+</div>
+</td>
+<td style="height: 80px; width: 108px;">
+<div style="text-align: center;">
+<h3>Sleeping Setpoint</h3>
+<p><span class="s_temp">Not Ready</span></p>
+</div>
+</td>
+<td style="height: 80px; width: 108px;">
+<div style="text-align: center;">
+<h3><button onclick="s_up()" name="s_inc" type="button">UP</button><br>
+<button onclick="s_down()" name="s_dec" type="button">Down</button></h3>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
 </body></html>
