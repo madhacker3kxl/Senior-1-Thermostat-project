@@ -7,7 +7,7 @@ const int Heat_Pin  = 6;
 const int Alert_Pin = 7;
 const int R_Temp    = A0;
 const int L_Temp    = A1;
-const bool Print    = 0;//For debug output
+const bool Print    = 1;//For debug output
 
 int numReading   = 100; //Number of readings to average
 
