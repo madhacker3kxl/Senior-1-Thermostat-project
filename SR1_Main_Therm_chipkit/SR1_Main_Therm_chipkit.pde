@@ -152,7 +152,7 @@ void Temperature(Client cl)
     Temperature = Temperature * 9 / 5 + 32;
     cl.print("<temp>");
     cl.print(Temperature); 
-    cl.print(" Â°F, ");
+    cl.print(" Ã‚Â°F, ");
     cl.println("</temp>");
   }
 
@@ -336,6 +336,7 @@ void get_time() {
     Serial.println(seconds);
   }
 }
+
 
 
 
